@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.A. Shirts | Scrollytelling Experience</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        darkbg: '#050505'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #050505;
+            color: white;
+            margin: 0;
+            overflow-x: hidden;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* NAVEGACIÓN */
+        .premium-nav {
+            position: fixed;
+            /* Fijo para que siempre esté visible */
+            top: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 4rem;
+            z-index: 100;
+            mix-blend-mode: difference;
+            /* Para que resalte bien en fondos claros/oscuros */
+        }
+
+        /* 
+         * JESKO JETS HERO REVEAL TRANSITION
+         * El texto gigante se queda fijo en el fondo (z-index: 0)
+         * y la capa principal hace "scroll" por encima tapándolo.
+         */
+        .fixed-hero-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background-color: #e5e0d8;
+            /* Color crema elegante parecido a Jesko Jets */
+            color: #1a1a1a;
+            z-index: 0;
+        }
+
+        .jesko-title {
+            font-size: 14vw;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+            line-height: 0.85;
+            text-align: center;
+        }
+
+        .jesko-subtitle {
+            margin-top: 1rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            color: #4a4a4a;
+        }
+
+        /* 
+         * CAPAS DE SCROLLYTELLING (CANVAS 1 y CANVAS 2)
+         * Empiezan con margin-top: 100vh para dejar ver el fondo fijo antes de hacer scroll.
+         */
+        .content-layer {
+            position: relative;
+            z-index: 10;
+            margin-top: 100vh;
+            /* Da espacio a la portada inicial estática */
+            background-color: #050505;
+            box-shadow: 0 -20px 50px rgba(0, 0, 0, 0.5);
+            /* Sombra superpuesta suave */
+        }
+
+        .scroll-container {
+            height: 400vh;
+            /* 4 pantallas de alto para scroll suave animado */
+            position: relative;
+            background-color: #050505;
+        }
+
+        /* Espaciador elegante entre secuencias */
+        .intermezzo {
+            height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #050505;
+            z-index: 15;
+            position: relative;
+        }
+
+        /* Canvas pegajoso y centrado */
+        .sticky-canvas {
+            position: sticky;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 10;
+            background-color: #050505;
+            /* Prevenir parpadeos transparentes */
+        }
+
+        /* Contenedor de Textos Flotantes */
+        .story-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            /* Igual al contenedor padre (400vh) */
+            pointer-events: none;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Secciones de texto individuales a lo largo del scroll físico */
+        .story-section {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 8%;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1), transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .story-section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .story-text {
+            max-width: 600px;
+            text-align: center;
+        }
+
+        .story-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            color: rgba(255, 255, 255, 1);
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.9);
+        }
+
+        .story-subtitle {
+            font-size: 1.25rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 300;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9);
+        }
+
+        .align-left {
+            justify-content: flex-start;
+            text-align: left;
+        }
+
+        .align-right {
+            justify-content: flex-end;
+            text-align: right;
+        }
+
+        /* Spinner de carga inicial */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050505;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Centrar verticalmente en los laterales */
+        .story-section.side-content {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            /* Centrado vertical al fondo */
+            width: 100%;
+            height: 100vh;
+        }
+
+        .side-text-container {
+            width: 40%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .side-empty {
+            width: 40%;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .jesko-title {
+                font-size: 15vw;
+            }
+
+            .premium-nav {
+                padding: 1.5rem 1.5rem;
+            }
+
+            .story-title {
+                font-size: 2.5rem;
+            }
+
+            .align-left,
+            .align-right {
+                justify-content: center;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Pantalla de carga -->
+    <div id="loader">
+        <div class="spinner mb-4"></div>
+        <div class="text-white/60 tracking-widest text-sm uppercase mb-2">Cargando tejidos 4K...</div>
+        <div id="loader-percentage" class="text-white font-bold text-2xl">0%</div>
+    </div>
+
+    <!-- Navegación Premium -->
+    <nav class="premium-nav">
+        <div class="text-xl font-extrabold tracking-[0.15em]">S.A.</div>
+        <ul class="flex gap-10 text-xs tracking-[0.2em] font-semibold uppercase hidden md:flex items-center">
+            <li><a href="#" class="hover:opacity-50 transition-opacity">La Esencia</a></li>
+            <li><a href="#" class="hover:opacity-50 transition-opacity">Artesanía</a></li>
+            <li><a href="#scroll-start"
+                    class="border border-current px-6 py-3 hover:bg-white hover:text-black hover:border-white transition-colors mix-blend-difference text-white">Colección</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- 
+      1. HERO REVEAL BACKGROUND
+      Esta capa se queda quieta en el fondo. El resto del sitio pasa por encima de ella al hacer scroll.
+    -->
+    <div class="fixed-hero-bg">
+        <h1 class="jesko-title" style="font-size: 8vw;">La camisa perfecta<br></h1>
+        <p class="jesko-subtitle">Se siente</p>
+        <p class="text-sm tracking-[0.3em] font-semibold uppercase text-gray-500 mt-12 animate-bounce">Scroll down</p>
+    </div>
+
+    <!-- MAIN SCROLL CONTENT (Se desliza por encima del fixed hero) -->
+    <div class="content-layer">
+
+        <!-- ==========================================
+             PRIMER CANVAS (ezgif-4ef2421d0d3f6006-jpg)
+             ========================================== -->
+        <main class="scroll-container" id="scroll-container-1">
+            <!-- Canvas Interactivo 1 -->
+            <canvas id="canvas-1" class="sticky-canvas"></canvas>
+
+            <!-- Textos del Canvas 1 (Lado Izquierdo, Lado Derecho) -->
+            <div class="story-layer">
+                <section class="story-section side-content" data-start="0" data-end="33">
+                    <div class="side-text-container text-left pl-10">
+                        <h1 class="story-title text-5xl">Arquitectura<br>Perfecta</h1>
+                        <p class="story-subtitle mt-4">Explora la precisión de nuestra primera pieza.</p>
+                    </div>
+                    <div class="side-empty"></div>
+                </section>
+
+                <section class="story-section side-content" data-start="33" data-end="66">
+                    <div class="side-empty"></div>
+                    <div class="side-text-container text-right pr-10">
+                        <h2 class="story-title text-5xl">Estructura<br>Impecable</h2>
+                        <p class="story-subtitle mt-4">Cuellos reforzados para una presencia sólida todo el día.</p>
+                    </div>
+                </section>
+
+                <section class="story-section side-content" data-start="66" data-end="100">
+                    <div class="side-text-container text-left pl-10">
+                        <h2 class="story-title text-5xl">La Caída<br>Exacta</h2>
+                        <p class="story-subtitle mt-4">Márgenes milimétricos en los hombros.</p>
+                        <a href="#"
+                            class="inline-block mt-8 border border-white/50 text-white px-8 py-4 uppercase tracking-[0.2em] text-sm hover:bg-white hover:text-darkbg transition-colors duration-300 pointer-events-auto w-max">
+                            Ver toda la Colección
+                        </a>
+                    </div>
+                    <div class="side-empty"></div>
+                </section>
+            </div>
+        </main>
+
+        <!-- FOOTER SIMPLE -->
+        <footer class="bg-darkbg text-center py-20 border-t border-white/10 mt-10">
+            <p class="text-white/40 tracking-widest text-sm">&copy; 2026 S.A. SHIRTS ATELIER</p>
+        </footer>
+
+    </div>
+
+    <!-- LOGICA JAVASCRIPT RE-ESCRITA A CLASES PARA SOPORTAR DOBLE CANVAS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+
+            // 1. CLASE CONTROLADORA DE CADA CANVAS
+            class ScrollyCanvas {
+                constructor(config) {
+                    this.canvas = document.getElementById(config.canvasId);
+                    this.context = this.canvas.getContext("2d");
+                    this.container = document.getElementById(config.containerId);
+                    this.folder = config.folder;
+                    this.frameCount = config.frameCount;
+                    this.images = []; // Array que guardará las 192 imágenes precargadas
+
+                    this.sections = this.container.querySelectorAll('.story-section');
+                    this.onLoadCompleteCallback = config.onLoadComplete;
+
+                    this.setupCanvasSpecs();
+                    this.preloadImages();
+
+                    // Listeners locales
+                    window.addEventListener('resize', () => {
+                        this.setupCanvasSpecs();
+                        if (this.images[0]) this.drawImageCover(this.images[0]);
+                    });
+                }
+
+                // Precargar todo en Memoria para evitar "saltos de luz"
+                preloadImages() {
+                    let loadedImages = 0;
+                    const loaderText = document.getElementById('loader-percentage');
+
+                    for (let i = 0; i < this.frameCount; i++) {
+                        const img = new Image();
+                        img.src = this.getFramePath(i);
+                        img.onload = () => {
+                            loadedImages++;
+
+                            // Mostrar progreso en UI de forma redondeada
+                            const percent = Math.floor((loadedImages / this.frameCount) * 100);
+                            if (loaderText) loaderText.innerText = `${percent}%`;
+
+                            if (loadedImages === this.frameCount) {
+                                // Dibujar frame 0 cuando TODAS estén listas
+                                this.drawImageCover(this.images[0]);
+                                if (this.onLoadCompleteCallback) this.onLoadCompleteCallback();
+                            }
+                        };
+                        // Guardar referencia en el array
+                        this.images.push(img);
+                    }
+                }
+
+                // Generador de ruta dinámica con Offset (iniciar en Frame 3)
+                getFramePath(index) {
+                    const actualIndex = Math.min(index + 3, 191);
+                    const paddedIndex = actualIndex.toString().padStart(3, '0');
+                    return `${this.folder}/frame_${paddedIndex}.png`;
+                }
+
+                // Retina & HiDPI (Calidad 1000% sin blur)
+                setupCanvasSpecs() {
+                    const dpr = window.devicePixelRatio || 1;
+                    const logicalWidth = window.innerWidth;
+                    const logicalHeight = window.innerHeight;
+
+                    this.canvas.width = logicalWidth * dpr;
+                    this.canvas.height = logicalHeight * dpr;
+
+                    this.canvas.style.width = logicalWidth + 'px';
+                    this.canvas.style.height = logicalHeight + 'px';
+
+                    this.context.scale(dpr, dpr);
+                    this.context.imageSmoothingEnabled = true;
+                    this.context.imageSmoothingQuality = 'high';
+                }
+
+                // Object-fit: cover en Canvas
+                drawImageCover(imgToDraw) {
+                    if (!imgToDraw) return;
+
+                    const canvasWidth = window.innerWidth;
+                    const canvasHeight = window.innerHeight;
+
+                    const hRatio = canvasWidth / imgToDraw.width;
+                    const vRatio = canvasHeight / imgToDraw.height;
+                    const ratio = Math.max(hRatio, vRatio); // Max = Cover
+
+                    const newWidth = imgToDraw.width * ratio;
+                    const newHeight = imgToDraw.height * ratio;
+
+                    const centerShift_x = (canvasWidth - newWidth) / 2;
+                    const centerShift_y = (canvasHeight - newHeight) / 2;
+
+                    this.context.clearRect(0, 0, canvasWidth, canvasHeight);
+                    this.context.drawImage(imgToDraw, 0, 0, imgToDraw.width, imgToDraw.height, centerShift_x, centerShift_y, newWidth, newHeight);
+                }
+
+                updateFrame(index) {
+                    // Solo dibujar si la imagen ya existe en RAM
+                    if (this.images[index]) {
+                        this.drawImageCover(this.images[index]);
+                    }
+                }
+
+                // Engine que se llama en cada evento de scroll de la ventana
+                onScroll(globalScrollTop) {
+                    // Posición absoluta en la página de este contenedor específico
+                    const containerOffsetTop = this.container.offsetTop + document.querySelector('.content-layer').offsetTop;
+
+                    // ¿Cuánto hemos scrolleado DENTRO de este contenedor localmente?
+                    let scrollIntoContainer = globalScrollTop - containerOffsetTop;
+
+                    // Si el usuario aún no llega a este blooque, forzamos frame 0.
+                    if (scrollIntoContainer < 0) scrollIntoContainer = 0;
+
+                    // Altura transitable: Alto del container gigante (400vh) menos lo que mide una pantalla
+                    const maxCanvasScroll = this.container.scrollHeight - window.innerHeight;
+
+                    let scrollFraction = scrollIntoContainer / maxCanvasScroll;
+                    if (scrollFraction > 1) scrollFraction = 1; // Tope
+                    if (scrollFraction < 0) scrollFraction = 0;
+
+                    const scrollPercent = scrollFraction * 100;
+
+                    // Calcular nuevo Frame
+                    const frameIndex = Math.min(
+                        this.frameCount - 1,
+                        Math.floor(scrollFraction * this.frameCount)
+                    );
+
+                    // Petición suave al navegador
+                    requestAnimationFrame(() => this.updateFrame(frameIndex));
+
+                    // Lógica de textos para este bloque en específico
+                    this.sections.forEach(sec => {
+                        const start = parseFloat(sec.getAttribute('data-start'));
+                        const end = parseFloat(sec.getAttribute('data-end'));
+
+                        if (scrollPercent >= start && scrollPercent < end) {
+                            sec.classList.add('visible');
+                        } else {
+                            sec.classList.remove('visible');
+                        }
+                    });
+                }
+            }
+
+            // 2. INSTANCIACIÓN DEL ÚNICO CANVAS
+
+            // Primer Canvas
+            const canvasOne = new ScrollyCanvas({
+                canvasId: 'canvas-1',
+                containerId: 'scroll-container-1',
+                folder: 'ezgif-split', // LA NUEVA CARPETA CON IMAGENES DE MAXIMA CALIDAD
+                frameCount: 189, // Total - 3 frames saltados al inicio
+                onLoadComplete: () => {
+                    // Ocultar Loader general solo cuando cargue la principal
+                    setTimeout(() => {
+                        const loader = document.getElementById('loader');
+                        loader.style.opacity = 0;
+                        setTimeout(() => loader.style.display = 'none', 500);
+                    }, 500);
+                }
+            });
+
+            // 3. MASTER SCROLL EVENT PARA ALIMENTAR EL CANVAS
+            window.addEventListener('scroll', () => {
+                const scrollTop = window.scrollY;
+
+                // Le pasamos el scroll global al canvas activo
+                canvasOne.onScroll(scrollTop);
+            });
+
+            // Llamada forzada al arrancar para inicializar posiciones
+            canvasOne.onScroll(window.scrollY);
+
+        });
+    </script>
+</body>
+
+</html>
